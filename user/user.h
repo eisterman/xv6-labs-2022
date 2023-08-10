@@ -39,3 +39,16 @@ void free(void*);
 int atoi(const char*);
 int memcmp(const void *, const void *, uint);
 void *memcpy(void *, const void *, uint);
+
+// uvector.c
+typedef struct vector {
+    char* data;
+    uint capacity;
+    uint length;
+} vector;
+vector* vector_init();
+vector* vector_append(vector* v, void* m, uint bytes);
+vector* vector_byteappend(vector* v, char bt);
+void vector_free(vector* v);
+#define VECTOR_ACCESS(VEC, TYPE, INDX) (*(TYPE*)((VEC)->data + (INDX) * sizeof(TYPE)))
+#define VECTOR_RAWACCESS(VEC, TYPE, INDX) (*(TYPE*)((VEC)->data + (INDX)))
