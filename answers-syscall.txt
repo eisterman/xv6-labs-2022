@@ -1,0 +1,26 @@
+The function usertrap() from kernel/trap.c called syscall().
+I'm expecting that this execution comes from initcode.S during the first run of the scheduler().
+
+The value inside p->trapframe->a7 is the SYSCALL id, in this case 7 = SYS_EXEC because
+the intention of the program is to ask the kernel to overwrite it with the REAL init process
+from init.c / _init.
+
+The previous mode the CPU was can be understood reading the CSR sstatus.
+In this register we can read the bit 8 called SPP where
+0 = user
+1 = non-user
+So seeing that that value was 0 we can see that the mode that called the syscall/trap was User Mode.
+
+The entry the kernel is panicing is:
+80001ff8:	00002683          	lw	a3,0(zero) # 0 <_entry-0x80000000>
+and the variable num correspond to the registry a3.
+
+From the xv6 book I can see that the address 0x0 is not configured for supervisor mode use.
+I expect primarily a Paging Error.
+From the scause=0x000000000000000d we know from the last bit that it was an exception and not an
+interrupt, and the exception number is 13.
+From the RISC-V book I see that this code correspond to "Load Page Fault" so a Paging error during
+a Load operation, as I expected.
+
+From GDB we can see that the panicing is happening inside the process with name "initcode".
+
