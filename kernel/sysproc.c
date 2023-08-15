@@ -91,3 +91,11 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+uint64 sys_trace(void) {
+  int mask;
+  argint(0, &mask);  // TODO: This take a 32bit integer. Can I receive a 64bit one?
+  // Store the trace mask inside the process
+  myproc()->tracemask = (uint32)mask;
+  return 0;
+}
