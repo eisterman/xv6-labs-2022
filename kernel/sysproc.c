@@ -5,6 +5,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "sysinfo.h"
 
 uint64
 sys_exit(void)
@@ -97,5 +98,18 @@ uint64 sys_trace(void) {
   argint(0, &mask);  // TODO: This take a 32bit integer. Can I receive a 64bit one?
   // Store the trace mask inside the process
   myproc()->tracemask = (uint32)mask;
+  return 0;
+}
+
+uint64 sys_sysinfo(void) {
+  uint64 si; // user pointer to struct sysinfo
+  struct sysinfo out;
+  argaddr(0, &si);
+  out.freemem = kfreemem();
+  out.nproc = nproc();
+  // Return things
+  struct proc *p = myproc();
+  if(copyout(p->pagetable, si, (char*)&out, sizeof(out)) < 0)
+    return -1;
   return 0;
 }
