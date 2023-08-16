@@ -1,0 +1,11 @@
+1) Which other xv6 system call(s) could be made faster using this shared page? Explain how.
+Using this approach of a read-only page that the kernel initialize and populate and in the moment
+the process is created like for pid there are no more syscall to speed up.
+If we use a slightly different approach where calling the syscall ask the kernel to populate the
+USYSCALL memory zone with some specific info, I think almost every syscall that just returns
+information of a predefined size, and that can be changed just when possible by the kernel.
+For example getpid(), uptime(0 for the tick numbers (when a timer interrupt arrive, update the 
+value for every process, i'm not a fan but it's possible). Fstat is possible but it's not worth 
+beucase of how much state need to be moved for every file descriptor possible.
+
+
