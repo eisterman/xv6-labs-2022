@@ -20,4 +20,27 @@ this double-copy process. So at the end I think that make the syscalls return in
 predefined size directly into the USYSCALL is just counterproductive and the only real improvement
 can come from replacing entire syscalls adding them in the USYSCALL as "public kernel informations".
 
+2) Explain the output of vmprint in terms of Fig 3-4 from the text. What does page 0 contain? 
+What is in page 2? When running in user mode, could the process read/write the memory mapped by 
+page 1? What does the third to last page contain?
+
+The page 0.0.0 has as least significant bits 0v11011 and the bits from 0 to 4 define the permission.
+In this case we know this PTE is (from LSB to MSB): Valid, Read, NO Write, Execute, User.
+This permission set is compatible with the program code.
+Checking Figure 3.4 make sense becuase from what we can see here the program is loaded at 
+the address after 0x0.
+
+Page 0.0.2 has as permission bits 0b00111 that means Valid, Read, Write, NO Execute, NO User.
+From this configuration (and checking exec.c and vm.c) and from the book we can deduce this is
+the Guard Page located after the Data and before the Stack.
+
+Page 0.0.1 has aas permission bits 0b10111 that means Valid, Read, Write, NO Execute, User.
+This page can be accessed, written and read without problem in User Mode.
+
+The third to last page 255.511.509 is at the end of the VM address space, making me think about
+the "system pages" of Trampoline, Trapframe and Usyscall page.
+In fact counting that the 511 is surely the Trampoline because we map it there for everything,
+and that the page before is the Trapframe, the last one is the Usyscall that I have in fact mapped
+as the page before the Trapframe in the first exercise.
+So, it contains the USYSCALL page, with the PID number for now.
 
