@@ -1,11 +1,23 @@
 1) Which other xv6 system call(s) could be made faster using this shared page? Explain how.
+
 Using this approach of a read-only page that the kernel initialize and populate and in the moment
 the process is created like for pid there are no more syscall to speed up.
 If we use a slightly different approach where calling the syscall ask the kernel to populate the
 USYSCALL memory zone with some specific info, I think almost every syscall that just returns
 information of a predefined size, and that can be changed just when possible by the kernel.
-For example getpid(), uptime(0 for the tick numbers (when a timer interrupt arrive, update the 
-value for every process, i'm not a fan but it's possible). Fstat is possible but it's not worth 
-beucase of how much state need to be moved for every file descriptor possible.
+
+For example getpid(), uptime() for the tick numbers (when a timer interrupt arrive, update the 
+value for every process, i'm not a fan but it's possible) can be speed up with the first method.
+Other calls like Fstat is possible but it's not worth beucase of how much state need to be moved 
+for every file descriptor possible ad every change.
+
+The second method seems to me generally not useful because you still have to copy data into the
+USYSCALL page. You can just copy that in a struct that the user tells you. You speed up the call
+by a low quantity of cycle, just to prevent the copy of the pointer from Userspace and Kernelspace.
+This can be even counterproductive because if the user need to modify or keep the data between
+syscalls he still need to copy them out of the USYSCALL page making the process SLOWER because of 
+this double-copy process. So at the end I think that make the syscalls return info of 
+predefined size directly into the USYSCALL is just counterproductive and the only real improvement
+can come from replacing entire syscalls adding them in the USYSCALL as "public kernel informations".
 
 
