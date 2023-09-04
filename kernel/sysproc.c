@@ -75,6 +75,40 @@ int
 sys_pgaccess(void)
 {
   // lab pgtbl: your code here.
+  uint64 page_adr;
+  int n_of_pages;
+  uint64 amask_adr;
+  char amask[512/8];
+
+  argaddr(0, &page_adr);
+  argint(1, &n_of_pages);
+  argaddr(2, &amask_adr);
+  
+  if (n_of_pages > 512) {
+    return -1;
+  }
+
+  uint max_mask_cell = n_of_pages/8+1;
+  memset(amask, 0, sizeof(char)*max_mask_cell);
+
+  struct proc* p = myproc();
+  uint64 va = PGROUNDDOWN(page_adr);
+
+  for(int poffset = 0; poffset < n_of_pages; poffset++) {
+    pte_t* pte = walk(p->pagetable, va+PGSIZE*poffset, 0);
+    uint cell = poffset / 8;
+    uint cellbit = poffset % 8;
+    if(*pte & PTE_A) {
+      // TODO: Segna bitmask 1 e pulisci
+      amask[cell] |= (1 << cellbit);
+      *pte &= ~PTE_A;
+    } else {
+      amask[cell] |= (0 << cellbit);
+    }
+  }
+
+  copyout(p->pagetable, amask_adr, amask, max_mask_cell);
+  
   return 0;
 }
 #endif
