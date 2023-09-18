@@ -1,0 +1,40 @@
+# RISC-V Assembly
+Q1. Which registers contain arguments to functions? For example, which register holds 13 in main's call to printf?
+R1. Generally registers "a_n" contains arguments (a0, a1, ..., a7). In the case of printf in main the registry that holds 13 is a2.
+
+Q2. Where is the call to function f in the assembly code for main? Where is the call to g? (Hint: the compiler may inline functions.)
+R1. The call to f and g are inlined, but we can still see "where" this inline happened.
+    The inline of g() in f() is visible on address 0x14, while the inline of f() in main() is in addr 0x24.
+
+Q3. At what address is the function printf located?
+R3. Address 0x630
+
+Q4. What value is in the register ra just after the jalr to printf in main?
+R4. jalr save the pc+4 (next instruction) automatically inside ra before jumping, so it will contain 38.
+
+Q5. Run the following code.
+    unsigned int i = 0x00646c72;
+    printf("H%x Wo%s", 57616, &i);
+What is the output?
+The output depends on that fact that the RISC-V is little-endian. If the RISC-V were instead big-endian what would you set i to in order to yield the same output? Would you need to change 57616 to a different value?
+R5. Because RV is little endian the data are written from the LSB to the MSB at the increase of the memory address, so we know that i in memory is:
+low                                         high
+----------------------------------------------
+| 0x72 = r | 0x6c = l | 0x64 = d | 0x00 = \0 |
+----------------------------------------------
+Writing in the second part the word "World". This is because the string reading is done
+byte by byte at crescent memory address.
+For the first part instead, the system see a single decimal number 57616 that 
+casted to hex is 0xe110 that is printed as-it-is by %x.
+So the final result will be "He110 World".
+If the system would be big-endian i will need to contain the bytes in reverse order so:
+    unsigned int i = 0x726c6400;
+while 57616 can remain the same because the endianess doesn't impact how %x format a dec number
+in the printf function, at least on paper that's what I'm expecting.
+
+Q6. In the following code, what is going to be printed after 'y='? (note: the answer is not a specific value.) Why does this happen?
+
+	printf("x=%d y=%d", 3);
+R6. It will print a "random" number, probably correlated in my opinion with the previous content of the registry a2 because is the one associated with the second argument of the variadic C function printf.
+This is because C itself doesn't enforce the number of arguments of a variadic function, and so printf still try to read from the expected source of the "third argument" the second format value.
+
