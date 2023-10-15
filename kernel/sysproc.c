@@ -92,3 +92,28 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+uint64 sys_sigalarm(void) {
+  int ticks;
+  uint64 handler_addr;
+
+  argint(0, &ticks);
+  argaddr(1, &handler_addr);
+  
+  struct proc* p = myproc();
+  p->timer_ticks = ticks;
+  p->timer_ticks_target = ticks;
+  p->handler = (void(*)())handler_addr;
+  return 0;
+}
+
+uint64 sys_sigreturn(void) {
+  struct proc* p = myproc();
+  // Question: Is there a stackframe that is not dealloccated because of this syscall return jump?
+  // Restore context
+  copy_fc_into_trapframe(&p->timer_context, p->trapframe);
+  p->trapframe->epc = p->return_from_handler;
+  // Set again timer
+  p->timer_ticks = p->timer_ticks_target;
+  return p->timer_context.a0;
+}

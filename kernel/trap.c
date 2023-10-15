@@ -77,8 +77,20 @@ usertrap(void)
     exit(-1);
 
   // give up the CPU if this is a timer interrupt.
-  if(which_dev == 2)
+  if(which_dev == 2) {
+    // Timer interrupt
+    if(p->timer_ticks > 1) {
+      p->timer_ticks--;
+    } else if (p->timer_ticks == 1) {
+      p->timer_ticks = 0;
+      //Save context
+      copy_trapframe_into_fc(p->trapframe, &p->timer_context);
+      p->return_from_handler = p->trapframe->epc;
+      // Set the process to launch the handler
+      p->trapframe->epc = (uint64)p->handler;
+    }
     yield();
+  }
 
   usertrapret();
 }

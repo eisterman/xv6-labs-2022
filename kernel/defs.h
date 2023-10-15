@@ -1,5 +1,7 @@
 struct buf;
 struct context;
+struct fullcontext;
+struct trapframe;
 struct file;
 struct inode;
 struct pipe;
@@ -84,6 +86,8 @@ void            backtrace(void);
 
 // proc.c
 int             cpuid(void);
+void            copy_trapframe_into_fc(struct trapframe*, struct fullcontext*);
+void            copy_fc_into_trapframe(struct fullcontext*, struct trapframe*);
 void            exit(int);
 int             fork(void);
 int             growproc(int);
