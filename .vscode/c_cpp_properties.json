@@ -5,11 +5,10 @@
             "includePath": [
                 "${workspaceFolder}/**"
             ],
-            "defines": [],
+            "defines": ["LAB_COW"],
             "cStandard": "gnu17",
             "cppStandard": "c++11",
-            "intelliSenseMode": "linux-gcc-x64",
-            //"configurationProvider": "ms-vscode.makefile-tools"
+            "intelliSenseMode": "linux-gcc-x64"
         }
     ],
     "version": 4
