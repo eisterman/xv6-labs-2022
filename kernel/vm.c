@@ -305,7 +305,7 @@ uvmfree(pagetable_t pagetable, uint64 sz)
 int
 uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
 {
-  pte_t *pte;
+  pte_t *pte, newpte;
   uint64 pa, i;
   uint flags;
 
@@ -314,13 +314,27 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
       panic("uvmcopy: pte should exist");
     if((*pte & PTE_V) == 0)
       panic("uvmcopy: page not present");
-    pa = PTE2PA(*pte);
-    flags = PTE_FLAGS(*pte);
-    *pte = *pte | !PTE_W;
-    if(mappages(new, i, PGSIZE, pa, flags | !PTE_W) != 0){
+    // pa = PTE2PA(*pte);
+    // flags = PTE_FLAGS(*pte);
+    printf("uvmcopying va: %p pa: %p flags: %x\n", i, PTE2PA(*pte), PTE_FLAGS(*pte));
+    if(*pte & PTE_W || *pte & PTE_PW) {
+      newpte = cow_spawn(pte);
+    } else {
+      newpte = *pte;
+    }
+    newpte = cow_spawn(pte);
+    pa = PTE2PA(newpte);
+    flags = PTE_FLAGS(newpte);
+    if(mappages(new, i, PGSIZE, pa, flags) != 0){
       goto err;
     }
+    // DEBUG
+    pte_t *pte_new = walk(new, i, 0);
+    printf("uvmcopied va: %p pa: %p flags: %x\n", i, PTE2PA(*pte_new), PTE_FLAGS(*pte_new));
+    // DEBUG
   }
+  // DEBUG
+  printf("call completed\n");
   return 0;
 
  err:
@@ -348,10 +362,23 @@ int
 copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 {
   uint64 n, va0, pa0;
-
+  pte_t *pte, new_pte;
   while(len > 0){
     va0 = PGROUNDDOWN(dstva);
-    pa0 = walkaddr(pagetable, va0);
+    pte = walk(pagetable, va0, 0);
+    if(pte == 0)
+      return -1;
+    if((*pte & PTE_V) == 0)
+      return -1;
+    if((*pte & PTE_U) == 0)
+      return -1;
+    new_pte = cow_upgrade(pte);
+    if (new_pte == 0) {
+      // Alloc failure inside cow_upgrade or page not writable
+      return -1;
+    }
+    *pte = new_pte;
+    pa0 = PTE2PA(new_pte);
     if(pa0 == 0)
       return -1;
     n = PGSIZE - (dstva - va0);
@@ -432,4 +459,29 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
   } else {
     return -1;
   }
+}
+
+static void rec_vmprint(pagetable_t pagetable, int depth) {
+  // there are 2^9 = 512 PTEs in a page table
+  for(int i = 0; i < 512; i++) {
+    pte_t pte = pagetable[i];
+    if((pte & PTE_V)){
+      uint64 child = PTE2PA(pte);
+      for(int j = 0; j < depth; j++) printf(" ..");
+      printf("%d: pte %p pa %p\n", i, pte, child);
+      if ((pte & (PTE_R|PTE_W|PTE_X)) == 0) {
+        // this PTE points to a lower-level page table
+        // because is valid AND has none of
+        // the Read, Write, Exec flags (0,0,0).
+        rec_vmprint((pagetable_t)child, depth+1);
+      }
+    }
+    // Skip PTE flagged as non-valid
+  }
+}
+
+
+void vmprint(pagetable_t pagetable) {
+  printf("page table %p\n", pagetable);
+  rec_vmprint(pagetable, 1);
 }

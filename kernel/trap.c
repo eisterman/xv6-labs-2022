@@ -65,6 +65,30 @@ usertrap(void)
     intr_on();
 
     syscall();
+  } else if (r_scause() == 15) {
+    // store page fault (failed write on page set unwritable)
+    /*
+    Ispeziona la pagina a cui appartiene l'indirizzo acceduto. Se risultava "writable",
+    kalloc, copia i dati e sostituisci la pagina in RO con qella writable.
+    Se la pagina non e' writable, setkilled(p);.
+    */
+    uint64 va;
+    pte_t *pte, tmp_pte;
+
+    va = r_stval();
+    printf("STORE PAGE FAULT by %s at va %p\n", p->name, va);
+    pte = walk(p->pagetable, va, 0);
+    printf("PTE pre-interrupt: %p\n", *pte);
+    tmp_pte = cow_upgrade(pte);
+    if (tmp_pte == 0 ) {
+      // Error during kernel page allocation or page was not writable
+      printf("usertrap(): unexpected error during cow upgrade pid=%d\n", p->pid);
+      printf("            sepc=%p stval(va)=%p\n", r_sepc(), r_stval());
+      setkilled(p);
+    } else {
+      // Page has been upgraded to writable!
+      *pte = tmp_pte;
+    }
   } else if((which_dev = devintr()) != 0){
     // ok
   } else {

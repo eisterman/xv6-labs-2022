@@ -348,6 +348,9 @@ exit(int status)
 {
   struct proc *p = myproc();
 
+  // printf("EXIT PID %d\n", p->pid);
+  vmprint(p->pagetable);
+
   if(p == initproc)
     panic("init exiting");
 

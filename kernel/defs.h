@@ -22,6 +22,11 @@ void            consoleinit(void);
 void            consoleintr(int);
 void            consputc(int);
 
+// cow.c
+pte_t           cow_spawn(pte_t* pte);
+pte_t           cow_upgrade(pte_t* pte);
+int             cow_refcount(void* pa);
+
 // exec.c
 int             exec(char*, char**);
 
@@ -173,6 +178,7 @@ uint64          walkaddr(pagetable_t, uint64);
 int             copyout(pagetable_t, uint64, char *, uint64);
 int             copyin(pagetable_t, char *, uint64, uint64);
 int             copyinstr(pagetable_t, char *, uint64, uint64);
+void            vmprint(pagetable_t);
 
 // plic.c
 void            plicinit(void);

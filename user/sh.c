@@ -128,6 +128,8 @@ runcmd(struct cmd *cmd)
       runcmd(bcmd->cmd);
     break;
   }
+  printf("Child Shell Pre-Exit\n");
+  pgdump();
   exit(0);
 }
 
@@ -165,9 +167,18 @@ main(void)
         fprintf(2, "cannot cd %s\n", buf+3);
       continue;
     }
-    if(fork1() == 0)
+    printf("Main Shell Pre-Fork\n");
+    pgdump();
+    if(fork1() == 0) {
+      printf("Child Shell Post-Fork\n");
+      pgdump();
       runcmd(parsecmd(buf));
+    }
+    printf("Main Shell Post-Fork\n");
+    pgdump();
     wait(0);
+    printf("Main Shell Post-Wait\n");
+    pgdump();
   }
   exit(0);
 }

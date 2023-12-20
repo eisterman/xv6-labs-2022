@@ -47,9 +47,20 @@ void
 kfree(void *pa)
 {
   struct run *r;
+    pte_t fakepte;
 
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
+  
+  // Check CoW
+  int cow_refs = cow_refcount(pa);
+  if (cow_refs > 1) {
+    return;
+  } else if (cow_refs == 1) {
+    // "Fake upgrade" to free the dangling reference
+    fakepte = PA2PTE(pa) | PTE_V | PTE_PW;
+    cow_upgrade(&fakepte);
+  }
 
   // Fill with junk to catch dangling refs.
   memset(pa, 1, PGSIZE);
